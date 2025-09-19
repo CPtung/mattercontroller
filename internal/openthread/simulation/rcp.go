@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/CPtung/mtctrl/internal/config"
+	"github.com/CPtung/mattercontroller/internal/config"
 )
 
 // isNumeric

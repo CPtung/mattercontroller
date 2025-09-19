@@ -1,42 +1,36 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
-	"github.com/CPtung/mtctrl/internal/config"
-	"github.com/CPtung/mtctrl/pkg/otbr"
-	"github.com/CPtung/mtctrl/pkg/server"
-	"github.com/CPtung/mtctrl/pkg/simulation"
+	"github.com/spf13/cobra"
 )
 
+var (
+	Version, BuildTime string
+
+	infoCmd = &cobra.Command{
+		Use:   "info",
+		Short: "Show version/build info",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("Version:    %s\n", Version)
+			fmt.Printf("Build Time: %s\n", BuildTime)
+		},
+	}
+
+	rootCmd = &cobra.Command{
+		Use:   "matter",
+		Short: "Matter Controller",
+	}
+)
+
+func init() {
+	rootCmd.AddCommand(infoCmd)
+}
+
 func main() {
-	config.Init()
-	// create rcp simulator
-	ttyNum, err := simulation.StartRCP()
-	if err != nil {
-		panic(err)
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
 	}
-	defer simulation.StopRCP()
-
-	// create otbr simulator
-	otbr.CreateBorderRouter(ttyNum)
-	defer otbr.CloseBorderRouter()
-
-	// start OTBR
-	otbr.SetupThreadNetwork()
-	defer otbr.TearDownThreadNetwork()
-
-	// Declare a channel to receive OS signals for graceful shutdown
-	chanSignal := make(chan os.Signal, 1)
-	signal.Notify(chanSignal, syscall.SIGINT, syscall.SIGTERM)
-
-	apiServer := server.NewAPIServer()
-	if err := apiServer.Start(); err != nil {
-		panic(err)
-	}
-	defer apiServer.Stop()
-
-	<-chanSignal
 }

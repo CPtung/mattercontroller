@@ -1,12 +1,15 @@
-package otbr
+package openthread
 
 import (
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/CPtung/mattercontroller/internal/config"
 )
 
 type Command struct {
@@ -90,8 +93,8 @@ func checkStatus(state string) bool {
 }
 
 func writeTtyNum(ttyNum string) error {
-	// write ttyNum to /etc/mtctrl/otbr-env.list
-	envPath := "/run/mtctrl/otbr-env.list"
+	// write ttyNum to /etc/matter/otbr-env.list
+	envPath := filepath.Join(config.RuntimePath, "otbr-env.list")
 	content := fmt.Sprintf(`OT_RCP_DEVICE=spinel+hdlc+uart:///dev/pts/%s?uart-baudrate=115200
 OT_INFRA_IF=enp0s31f6
 OT_THREAD_IF=wpan0
@@ -100,8 +103,7 @@ OT_LOG_LEVEL=6`, ttyNum)
 	return os.WriteFile(envPath, []byte(content), 0644)
 }
 
-func CreateBorderRouter(ttyNum string) error {
-	// write ttyNum to /run/mtctrl/otbr-env.list
+func createBorderRouter(ttyNum string) error {
 	err := writeTtyNum(ttyNum)
 	if err != nil {
 		return err
@@ -110,7 +112,7 @@ func CreateBorderRouter(ttyNum string) error {
 	// docker run border router container
 	dockerCmd := `docker run --name otbr -d --rm \
 	--cap-add=net_admin \
-	--env-file=/run/mtctrl/otbr-env.list \
+	--env-file=/run/matter/otbr-env.list \
 	--network=host \
 	-v /dev/pts:/dev/pts \
 	--device=/dev/net/tun \
@@ -136,7 +138,7 @@ func CreateBorderRouter(ttyNum string) error {
 	return fmt.Errorf("啟動 Border Router 失敗")
 }
 
-func CloseBorderRouter() error {
+func closeBorderRouter() error {
 	// docker stop border router container
 	dockerCmd := `docker stop otbr`
 	fmt.Printf("執行: %s\n", dockerCmd)
@@ -194,8 +196,8 @@ func waitForStatus(targetStatus, statusName string, maxAttempts int, checkInterv
 	return fmt.Errorf("狀態檢查失敗: 未能達到 %s 狀態", targetStatus)
 }
 
-// SetupThreadNetwork 設置 Thread 網絡
-func SetupThreadNetwork() error {
+// setupThreadNetwork 設置 Thread 網絡
+func setupThread() error {
 	commands := []Command{
 		{"dataset init new", "初始化新數據集"},
 		{"dataset commit active", "提交活動數據集"},
@@ -213,8 +215,8 @@ func SetupThreadNetwork() error {
 	return waitForStatus("leader", "leader", 10, 5*time.Second)
 }
 
-// TearDownThreadNetwork 關閉 Thread 網絡
-func TearDownThreadNetwork() error {
+// tearDownThreadNetwork 關閉 Thread 網絡
+func tearDownThread() error {
 	commands := []Command{
 		{"thread stop", "停止 Thread 網絡"},
 		{"factoryreset", "重置初始化"},

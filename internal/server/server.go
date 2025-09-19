@@ -25,8 +25,8 @@ type APIServerImpl struct {
 }
 
 var (
-	runtimePath = "/var/run/thingspro"
-	unixPath    = runtimePath + "/.tpe_core_appman.sock"
+	runtimePath = "/var/run/matter"
+	unixPath    = runtimePath + "/matter.sock"
 )
 
 func Address() string {
@@ -66,7 +66,7 @@ func NewAPIServer() APIServer {
 			Addr:    "unix://" + unixPath,
 			Handler: gin.Default(),
 		},
-		logger: logrus.WithFields(logrus.Fields{"origin": "appman"}),
+		logger: logrus.WithFields(logrus.Fields{"origin": "matter"}),
 	}
 }
 

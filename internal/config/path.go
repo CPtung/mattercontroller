@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	LibPath     = "/var/lib/mtctrl"
-	EtcPath     = "/etc/mtctrl"
-	RuntimePath = "/run/mtctrl"
+	LibPath     = "/var/lib/matter"
+	EtcPath     = "/etc/matter"
+	RuntimePath = "/run/matter"
 )
 
 var oncePaths sync.Once
