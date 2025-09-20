@@ -1,0 +1,217 @@
+openapi: 3.0.3
+info:
+  title: Matter & Light API
+  version: 1.0.0
+  description: |
+    OpenAPI specification for routes:
+    - `POST /matter/pairing`
+    - `POST /matter/unpairing/{deviceID}`
+    - `GET /light/{deviceID}`
+    - `PUT /light/{deviceID}`
+    This API is served over a Unix domain socket. The socket path is percent-encoded in the server URL.
+
+servers:
+  - url: http+unix:///run/matter/matter.sock
+    description: Unix domain socket |
+      (percent-encoded path `/var/run/matter/matter.sock`)
+
+tags:
+  - name: matter
+    description: Matter device pairing and unpairing
+  - name: light
+    description: Light device state management
+
+paths:
+  /matter/pairing:
+    post:
+      tags: [matter]
+      summary: Pair a device
+      operationId: postPairing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatterPairRequest'
+            examples:
+              example:
+                value:
+                  nodeID: "1"
+                  pairCode: "34970112332"
+      responses:
+        '200':
+          description: Pairing successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatterDevice'
+              examples:
+                paired:
+                  value:
+                    id: 1
+                    nodeId: "1"
+                    endpointId: "1"
+        '400':
+          description: Validation failed (missing required fields)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /matter/unpairing/{deviceID}:
+    post:
+      tags: [matter]
+      summary: Unpair a device
+      operationId: postUnpairing
+      parameters:
+        - name: deviceID
+          in: path
+          required: true
+          schema: { type: string }
+          description: Target device ID
+      responses:
+        '200':
+          description: Unpairing successful
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GenericSuccess' }
+              examples:
+                ok:
+                  value: { success: true }
+        '404':
+          description: Device not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /light/{deviceID}:
+    get:
+      tags: [light]
+      summary: Get light state
+      operationId: getLightState
+      parameters:
+        - name: deviceID
+          in: path
+          required: true
+          schema: { type: string }
+          description: Light device ID
+      responses:
+        '200':
+          description: Current light state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LightState' }
+              examples:
+                on:  { value: { state: "on" } }
+                off: { value: { state: "off" } }
+        '404':
+          description: Device not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    put:
+      tags: [light]
+      summary: Set light state (on/off)
+      operationId: putLightOnOff
+      parameters:
+        - name: deviceID
+          in: path
+          required: true
+          schema: { type: string }
+          description: Light device ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MatterLightConfig' }
+            examples:
+              turnOn:  { value: { state: "on" } }
+              turnOff: { value: { state: "off" } }
+      responses:
+        '200':
+          description: Light state updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LightState' }
+              examples:
+                updatedOn: { value: { state: "on" } }
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              examples:
+                invalidState:
+                  value: { error: 'state must be "on" or "off"' }
+        '404':
+          description: Device not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+  schemas:
+    MatterPairRequest:
+      type: object
+      required: [nodeID, pairCode]
+      properties:
+        nodeID:
+          type: string
+          description: Matter node ID
+        pairCode:
+          type: string
+          description: Pairing code
+    MatterDevice:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Internal device ID
+        nodeId:
+          type: string
+          description: Matter node ID
+        endpointId:
+          type: string
+          description: Matter endpoint ID
+    MatterLightConfig:
+      type: object
+      required: [state]
+      properties:
+        state:
+          type: string
+          description: Desired light state
+          enum: [on, off]
+    LightState:
+      type: object
+      properties:
+        state:
+          type: string
+          enum: [on, off]
+          description: Current light state
+    GenericSuccess:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: error message
