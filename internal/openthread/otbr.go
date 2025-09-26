@@ -93,8 +93,8 @@ func checkStatus(state string) bool {
 }
 
 func writeTtyNum(ttyNum string) error {
-	// write ttyNum to /etc/matter/otbr-env.list
-	envPath := filepath.Join(config.RuntimePath, "otbr-env.list")
+	// write ttyNum to /var/lib/matter/otbr-env.list
+	envPath := filepath.Join(config.LibPath, "otbr-env.list")
 	content := fmt.Sprintf(`OT_RCP_DEVICE=spinel+hdlc+uart:///dev/pts/%s?uart-baudrate=115200
 OT_INFRA_IF=enp0s31f6
 OT_THREAD_IF=wpan0
@@ -112,9 +112,10 @@ func createBorderRouter(ttyNum string) error {
 	// docker run border router container
 	dockerCmd := `docker run --name otbr -d --rm \
 	--cap-add=net_admin \
-	--env-file=/run/matter/otbr-env.list \
+	--env-file=/var/lib/matter/otbr-env.list \
 	--network=host \
 	-v /dev/pts:/dev/pts \
+	-v /var/lib/matter:/var/lib/matter \
 	--device=/dev/net/tun \
 	--volume=/var/lib/otbr:/data \
 	openthread/border-router:latest`

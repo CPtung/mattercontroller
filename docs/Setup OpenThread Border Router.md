@@ -51,9 +51,10 @@ OT_LOG_LEVEL=7
 ```bash
 docker run --name otbr -d --rm \
 		--cap-add=net_admin \
-		--env-file=/run/matter/otbr-env.list \
+		--env-file=/var/lib/matter/otbr-env.list \
 		--network=host \
 		-v /dev/pts:/dev/pts \
+		-v /var/lib/matter:/var/lib/matter \
 		--device=/dev/net/tun \
 		--volume=/var/lib/otbr:/data \
 		openthread/border-router:latest

@@ -34,27 +34,29 @@
     ```bash
     # 如何編譯，可以參考 Makefile
     cp matter /usr/local/bin/
+
+    # 複製ENV檔到指定位置
+    mkdir -p /var/lib/matter
+    cp DESTDIR/var/lib/matter/* /var/lib/matter/
     
     # matter.service 檔案可參考 data 資料夾
     cp matter.service /lib/systemd/system/
     systemctl daemon-reload
+    systemctl start matter
     ```
     
 3. 啟動 OpenThread 模擬網路，當看到 `🎉 狀態檢查完成！設備已成為 leader` 表示網路已經建立。
     
     ```bash
-    # 複製OTBR ENV檔到指定位置
-    cp otbr-env.list /var/run/matter/
-    systemctl start matter
-    
     : ✅ start_socat.sh 執行成功
     : 💾 PTS 編號變數: 3
     : 🎯 PTY 完整路徑: /dev/pts/3
     : 執行: docker run --name otbr -d --rm \
     : 	--cap-add=net_admin \
-    : 	--env-file=/run/matter/otbr-env.list \
+    : 	--env-file=/var/lib/matter/otbr-env.list \
     : 	--network=host \
     : 	-v /dev/pts:/dev/pts \
+    :   -v /var/lib/matter:/var/lib/matter \
     : 	--device=/dev/net/tun \
     : 	--volume=/var/lib/otbr:/data \
     : 	openthread/border-router:latest
